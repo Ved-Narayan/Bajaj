@@ -1,4 +1,6 @@
 import Cors from 'cors';
+import { Buffer } from 'buffer'; // For decoding base64
+import mime from 'mime-types'; // To get MIME type
 
 // Initialize CORS middleware
 const cors = Cors({
@@ -18,12 +20,47 @@ function runMiddleware(req, res, fn) {
     });
 }
 
+// File Handling Logic
+function handleFile(base64File) {
+    if (!base64File) {
+        return {
+            file_valid: false,
+            file_mime_type: null,
+            file_size_kb: null,
+        };
+    }
+
+    try {
+        // Decode Base64 string
+        const fileBuffer = Buffer.from(base64File, 'base64');
+
+        // Validate file size (you can adjust this limit as needed)
+        const fileSizeKb = fileBuffer.length / 1024;
+
+        // Get MIME type (or null if unknown)
+        const fileMimeType = mime.lookup(fileBuffer) || 'application/octet-stream';
+
+        // Return file details
+        return {
+            file_valid: true,
+            file_mime_type: fileMimeType,
+            file_size_kb: fileSizeKb.toFixed(2), // Keeping size in 2 decimal places
+        };
+    } catch (error) {
+        return {
+            file_valid: false,
+            file_mime_type: null,
+            file_size_kb: null,
+        };
+    }
+}
+
 export default async function handler(req, res) {
     await runMiddleware(req, res, cors);
 
     if (req.method === 'POST') {
         try {
-            const { data } = req.body;
+            const { data, file } = req.body;
 
             // Input validation
             if (!Array.isArray(data)) {
@@ -32,6 +69,9 @@ export default async function handler(req, res) {
                     error: "Invalid input: 'data' field is required and should be an array."
                 });
             }
+
+            // Handle file processing
+            const fileDetails = handleFile(file);
 
             const user_id = formatUserId("john_doe", "01011990"); // Replace with actual values
             const { numbers, alphabets, highest_alphabet } = processInputData(data);
@@ -43,7 +83,10 @@ export default async function handler(req, res) {
                 roll_number: "ABCD123", // Replace with actual roll number
                 numbers: numbers,
                 alphabets: alphabets,
-                highest_alphabet: highest_alphabet
+                highest_alphabet: highest_alphabet,
+                file_valid: fileDetails.file_valid,
+                file_mime_type: fileDetails.file_mime_type,
+                file_size_kb: fileDetails.file_size_kb,
             });
         } catch (error) {
             return res.status(500).json({
@@ -63,12 +106,12 @@ export default async function handler(req, res) {
         }
     } else {
         res.setHeader('Allow', ['GET', 'POST']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        res.status(405).end(Method ${req.method} Not Allowed);
     }
 }
 
 function formatUserId(fullName, dob) {
-    return `${fullName.toLowerCase().replace(/ /g, '_')}_${dob}`;
+    return ${fullName.toLowerCase().replace(/ /g, '_')}_${dob};
 }
 
 function processInputData(data) {
