@@ -1,4 +1,4 @@
-import Cors from 'cors';
+const Cors = require('cors');
 
 // Initialize CORS middleware
 const cors = Cors({
@@ -18,7 +18,7 @@ function runMiddleware(req, res, fn) {
     });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {  // Changed to CommonJS export
     await runMiddleware(req, res, cors);
 
     if (req.method === 'POST') {
@@ -51,45 +51,5 @@ export default async function handler(req, res) {
                 error: "An internal error occurred."
             });
         }
-    } else if (req.method === 'GET') {
-        try {
-            return res.status(200).json({
-                operation_code: 1
-            });
-        } catch (error) {
-            return res.status(500).json({
-                error: "An internal error occurred."
-            });
-        }
-    } else {
-        res.setHeader('Allow', ['GET', 'POST']);
-        res.status(405).end(Method ${req.method} Not Allowed);
     }
-}
-
-function formatUserId(fullName, dob) {
-    return ${fullName.toLowerCase().replace(/ /g, '_')}_${dob};
-}
-
-function processInputData(data) {
-    const numbers = [];
-    const alphabets = [];
-    let highestAlphabet = null;
-
-    data.forEach(item => {
-        if (!isNaN(item)) {
-            numbers.push(item);
-        } else if (typeof item === 'string' && item.length === 1) {
-            alphabets.push(item);
-            if (highestAlphabet === null || item.toLowerCase() > highestAlphabet.toLowerCase()) {
-                highestAlphabet = item;
-            }
-        }
-    });
-
-    return {
-        numbers,
-        alphabets,
-        highest_alphabet: highestAlphabet ? [highestAlphabet] : []
-    };
 }
